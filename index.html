@@ -33,7 +33,7 @@
     <body
         class="bg-gray-100 flex flex-col items-center justify-center min-h-screen space-y-6"
     >
-        <h1 class="text-3xl font-bold mb-4">🏇 Horse Race</h1>
+        <h1 class="text-3xl font-bold mb-4">🏇 Hesteløp</h1>
 
         <div id="raceTrack" class="space-y-4 w-11/12 max-w-4xl">
             <div class="track">
@@ -64,6 +64,7 @@
 
         <button
             onclick="startRace(0.25, 0.25, 0.25, 0.25)"
+            id="startRace"
             class="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition"
         >
             Start Race
@@ -78,14 +79,14 @@
                 class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full transform transition-all scale-95 opacity-0"
                 id="modalContent"
             >
-                <h2 class="text-2xl font-bold mb-4">🏁 We Have a Winner!</h2>
+                <h2 class="text-2xl font-bold mb-4">🏁 Vi har en vinner!</h2>
                 <p id="winnerName" class="text-xl mb-6"></p>
                 <p id="winnerBets" class="text-xl mb-6"></p>
                 <button
                     onclick="closeModal()"
                     class="bg-blue-600 text-white px-5 py-2 rounded-xl hover:bg-blue-700 transition"
                 >
-                    Close
+                    Lukk
                 </button>
             </div>
         </div>
@@ -98,19 +99,19 @@
             <div
                 class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full transform transition-all scale-100 opacity-100"
             >
-                <h2 class="text-2xl font-bold mb-4">💰 Place Your Bet</h2>
+                <h2 class="text-2xl font-bold mb-4">💰 Legg inn bets</h2>
                 <form id="betForm" class="space-y-4">
                     <input
                         type="text"
                         id="bettorName"
-                        placeholder="Your name"
+                        placeholder="Navn"
                         required
                         class="border rounded-lg w-full p-2"
                     />
                     <input
                         type="number"
                         id="betAmount"
-                        placeholder="Bet amount (10=shot)"
+                        placeholder="Bet (10x = shot)"
                         min="1"
                         required
                         class="border rounded-lg w-full p-2"
@@ -118,34 +119,34 @@
                     <input
                         type="text"
                         id="bettorTaker"
-                        placeholder="Give to"
+                        placeholder="Gi til"
                         required
                         class="border rounded-lg w-full p-2"
                     />
                     <select id="betHorse" class="border rounded-lg w-full p-2">
-                        <option value="0">Horse 1 - Max hund</option>
-                        <option value="1">Horse 2 - Fifty shades of hay</option>
-                        <option value="2">Horse 3 - Sugemulen</option>
-                        <option value="3">Horse 4 - Fuktig fredag</option>
+                        <option value="0">Hest 1 - Max hund</option>
+                        <option value="1">Hest 2 - Fifty shades of hay</option>
+                        <option value="2">Hest 3 - Sugemulen</option>
+                        <option value="3">Hest 4 - Fuktig fredag</option>
                     </select>
                     <div class="flex justify-between">
                         <button
                             type="submit"
                             class="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
                         >
-                            Add Bet
+                            Legg til
                         </button>
                         <button
                             type="button"
                             onclick="closeBettingModal()"
-                            class="bg-gray-400 text-white px-4 py-2 rounded-xl hover:bg-gray-500 transition"
+                            class="bg-gray-700 text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition"
                         >
-                            Done
+                            Ferdig
                         </button>
                     </div>
                 </form>
                 <div class="mt-6">
-                    <h3 class="font-semibold mb-2">📋 Current Bets:</h3>
+                    <h3 class="font-semibold mb-2">📋 Bets:</h3>
                     <ul id="betList" class="text-left text-sm space-y-1"></ul>
                 </div>
             </div>
@@ -200,9 +201,13 @@
                 list.innerHTML = bets
                     .map(
                         (b) =>
-                            `<li>${b.name} bets ${b.bet} on ${
+                            `<li><span class='text-orange-500'>${
+                                b.name
+                            }</span> vedder ${b.bet} på ${
                                 horseNames[b.horseIdx]
-                            } and gives to ${b.receiver}</li>`
+                            } og gir til <span class='text-orange-500'>${
+                                b.receiver
+                            }</span></li>`
                     )
                     .join("");
             }
@@ -212,6 +217,8 @@
             }
 
             function startRace(p1, p2, p3, p4) {
+                document.getElementById("startRace").style.display = "none";
+
                 if (raceInProgress) return;
                 raceInProgress = true;
 
@@ -281,18 +288,28 @@
 
                 for (const w of winners) {
                     let slurker = "slurker";
-                    if (w.bet == 10) {
+                    if (w.bet == 1) {
+                        slurker = "slurk";
+                    }
+                    if (w.bet % 10 == 0) {
+                        const n = Math.floor(w.bet / 10);
                         slurker = "shot";
-                        w.bet = 1;
+                        if (n > 1) slurker = "shots";
+                        w.bet = n;
                     }
                     betsDisplay.innerHTML += `<span class='text-green-500 font-bold'><span class='text-orange-500'>${w.name}</span> gir ${w.bet} ${slurker} til <span class='text-orange-500' >${w.receiver}</span>! <br></span>`;
                 }
 
                 for (const w of losers) {
                     let slurker = "slurker";
-                    if (w.bet == 10) {
+                    if (w.bet == 1) {
+                        slurker = "slurk";
+                    }
+                    if (w.bet % 10 == 0) {
+                        const n = Math.floor(w.bet / 10);
                         slurker = "shot";
-                        w.bet = 1;
+                        if (n > 1) slurker = "shots";
+                        w.bet = n;
                     }
                     betsDisplay.innerHTML += `<span class='text-red-500 font-bold'><span class='text-orange-500'>${w.name}</span> må ta ${w.bet} ${slurker}! <br></span>`;
                 }
