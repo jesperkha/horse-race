@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Horse Race</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            .track {
+                min-height: 80px;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+                background: repeating-linear-gradient(
+                    90deg,
+                    #e2e8f0,
+                    #e2e8f0 10px,
+                    #cbd5e1 10px,
+                    #cbd5e1 20px
+                );
+                border-radius: 0.5rem;
+                overflow: hidden;
+            }
+            .horse {
+                position: absolute;
+                left: 0;
+                top: 10px;
+                transition: transform 0.05s linear;
+            }
+        </style>
+    </head>
+
+    <body
+        class="bg-gray-100 flex flex-col items-center justify-center min-h-screen space-y-6"
+    >
+        <h1 class="text-3xl font-bold mb-4">🏇 Horse Race</h1>
+
+        <div id="raceTrack" class="space-y-4 w-11/12 max-w-4xl">
+            <div class="track">
+                <div id="horse1" class="flex flex-col">
+                    <p>Max hund</p>
+                    <img src="horse1.png" alt="Horse 1" class="w-16" />
+                </div>
+            </div>
+            <div class="track">
+                <div id="horse2" class="flex flex-col">
+                    <p>Fifty shades of hay</p>
+                    <img src="horse2.png" alt="Horse 2" class="w-16" />
+                </div>
+            </div>
+            <div class="track">
+                <div id="horse3" class="flex flex-col">
+                    <p>Sugemulen</p>
+                    <img src="horse3.png" alt="Horse 3" class="w-16" />
+                </div>
+            </div>
+            <div class="track">
+                <div id="horse4" class="flex flex-col">
+                    <p>Fuktig fredag</p>
+                    <img src="horse4.png" alt="Horse 4" class="w-16" />
+                </div>
+            </div>
+        </div>
+
+        <button
+            onclick="startRace(0.25, 0.25, 0.25, 0.25)"
+            class="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition"
+        >
+            Start Race
+        </button>
+
+        <!-- Winner Modal -->
+        <div
+            id="winnerModal"
+            class="fixed inset-0 bg-black/60 flex items-center justify-center hidden"
+        >
+            <div
+                class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full transform transition-all scale-95 opacity-0"
+                id="modalContent"
+            >
+                <h2 class="text-2xl font-bold mb-4">🏁 We Have a Winner!</h2>
+                <p id="winnerName" class="text-xl mb-6"></p>
+                <p id="winnerBets" class="text-xl mb-6"></p>
+                <button
+                    onclick="closeModal()"
+                    class="bg-blue-600 text-white px-5 py-2 rounded-xl hover:bg-blue-700 transition"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+
+        <!-- Betting Modal -->
+        <div
+            id="bettingModal"
+            class="fixed inset-0 bg-black/60 flex items-center justify-center"
+        >
+            <div
+                class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full transform transition-all scale-100 opacity-100"
+            >
+                <h2 class="text-2xl font-bold mb-4">💰 Place Your Bet</h2>
+                <form id="betForm" class="space-y-4">
+                    <input
+                        type="text"
+                        id="bettorName"
+                        placeholder="Your name"
+                        required
+                        class="border rounded-lg w-full p-2"
+                    />
+                    <input
+                        type="number"
+                        id="betAmount"
+                        placeholder="Bet amount"
+                        min="1"
+                        required
+                        class="border rounded-lg w-full p-2"
+                    />
+                    <select id="betHorse" class="border rounded-lg w-full p-2">
+                        <option value="0">Horse 1 - Max hund</option>
+                        <option value="1">Horse 2 - Fifty shades of hay</option>
+                        <option value="2">Horse 3 - Sugemulen</option>
+                        <option value="3">Horse 4 - Fuktig fredag</option>
+                    </select>
+                    <div class="flex justify-between">
+                        <button
+                            type="submit"
+                            class="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
+                        >
+                            Add Bet
+                        </button>
+                        <button
+                            type="button"
+                            onclick="closeBettingModal()"
+                            class="bg-gray-400 text-white px-4 py-2 rounded-xl hover:bg-gray-500 transition"
+                        >
+                            Done
+                        </button>
+                    </div>
+                </form>
+                <div class="mt-6">
+                    <h3 class="font-semibold mb-2">📋 Current Bets:</h3>
+                    <ul id="betList" class="text-left text-sm space-y-1"></ul>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let raceInProgress = false;
+            let horses = [];
+            let bets = []; // Store {name, bet, horseIdx}
+
+            const horseNames = [
+                "Max hund",
+                "Fifty shades of hay",
+                "Sugemulen",
+                "Fuktig fredag",
+            ];
+
+            window.onload = () => {
+                document
+                    .getElementById("bettingModal")
+                    .classList.remove("hidden");
+            };
+
+            document
+                .getElementById("betForm")
+                .addEventListener("submit", (e) => {
+                    e.preventDefault();
+
+                    const name = document
+                        .getElementById("bettorName")
+                        .value.trim();
+                    const bet = parseFloat(
+                        document.getElementById("betAmount").value
+                    );
+                    const horseIdx = parseInt(
+                        document.getElementById("betHorse").value
+                    );
+
+                    if (!name || isNaN(bet) || bet <= 0) return;
+
+                    bets.push({ name, bet, horseIdx });
+                    updateBetList();
+
+                    document.getElementById("betForm").reset();
+                });
+
+            function updateBetList() {
+                const list = document.getElementById("betList");
+                list.innerHTML = bets
+                    .map(
+                        (b) =>
+                            `<li>${b.name} bets ${b.bet} on ${
+                                horseNames[b.horseIdx]
+                            }</li>`
+                    )
+                    .join("");
+            }
+
+            function closeBettingModal() {
+                document.getElementById("bettingModal").classList.add("hidden");
+            }
+
+            function startRace(p1, p2, p3, p4) {
+                if (raceInProgress) return;
+                raceInProgress = true;
+
+                horses = [
+                    { id: 1, el: document.getElementById("horse1"), pos: 0 },
+                    { id: 2, el: document.getElementById("horse2"), pos: 0 },
+                    { id: 3, el: document.getElementById("horse3"), pos: 0 },
+                    { id: 4, el: document.getElementById("horse4"), pos: 0 },
+                ];
+
+                const weights = [p1, p2, p3, p4];
+                const horsePool = [];
+                const numHorse = 10;
+
+                for (let i = 0; i < weights[0] * numHorse; i++)
+                    horsePool.push(0);
+                for (let i = 0; i < weights[1] * numHorse; i++)
+                    horsePool.push(1);
+                for (let i = 0; i < weights[2] * numHorse; i++)
+                    horsePool.push(2);
+                for (let i = 0; i < weights[3] * numHorse; i++)
+                    horsePool.push(3);
+
+                const finishLine =
+                    document.querySelector(".track").clientWidth - 80;
+
+                function animate() {
+                    const r = Math.floor(Math.random() * horsePool.length);
+                    const idx = horsePool[r];
+                    horsePool.splice(r, 1);
+                    if (!horsePool.includes(idx)) {
+                        for (let i = 0; i < weights[idx] * numHorse; i++)
+                            horsePool.push(idx);
+                    }
+
+                    const horse = horses[idx];
+                    if (horse.pos >= finishLine) {
+                        finishRace(idx);
+                        return;
+                    }
+
+                    horse.pos += 10;
+                    horse.el.style.transform = `translateX(${horse.pos}px)`;
+
+                    setTimeout(animate, 50);
+                }
+
+                animate();
+            }
+
+            function finishRace(winnerIndex) {
+                raceInProgress = false;
+                const modal = document.getElementById("winnerModal");
+                const betsDisplay = document.getElementById("winnerBets");
+                const content = document.getElementById("modalContent");
+                const winnerName = document.getElementById("winnerName");
+
+                winnerName.textContent = `🎉 Grattis! ${horseNames[winnerIndex]} vant!`;
+
+                const winners = bets.filter(
+                    (bet, _) => bet.horseIdx == winnerIndex
+                );
+
+                const losers = bets.filter(
+                    (bet, _) => bet.horseIdx != winnerIndex
+                );
+
+                for (const w of winners) {
+                    betsDisplay.innerHTML += `<span class='text-green-500 font-bold'>${
+                        w.name
+                    } deler ut ${w.bet * 4} slurker! <br></span>`;
+                }
+
+                for (const w of losers) {
+                    betsDisplay.innerHTML += `<span class='text-red-500 font-bold'>${w.name} må ta ${w.bet} slurker! <br></span>`;
+                }
+
+                modal.classList.remove("hidden");
+                setTimeout(() => {
+                    content.classList.remove("scale-95", "opacity-0");
+                    content.classList.add("scale-100", "opacity-100");
+                }, 50);
+
+                console.log("All bets:", bets);
+            }
+
+            function closeModal() {
+                const modal = document.getElementById("winnerModal");
+                const content = document.getElementById("modalContent");
+                content.classList.add("scale-95", "opacity-0");
+                setTimeout(() => {
+                    modal.classList.add("hidden");
+                }, 200);
+            }
+        </script>
+    </body>
+</html>
+
