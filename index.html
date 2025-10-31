@@ -110,8 +110,15 @@
                     <input
                         type="number"
                         id="betAmount"
-                        placeholder="Bet amount"
+                        placeholder="Bet amount (10=shot)"
                         min="1"
+                        required
+                        class="border rounded-lg w-full p-2"
+                    />
+                    <input
+                        type="text"
+                        id="bettorTaker"
+                        placeholder="Give to"
                         required
                         class="border rounded-lg w-full p-2"
                     />
@@ -170,6 +177,9 @@
                     const name = document
                         .getElementById("bettorName")
                         .value.trim();
+                    const receiver = document
+                        .getElementById("bettorTaker")
+                        .value.trim();
                     const bet = parseFloat(
                         document.getElementById("betAmount").value
                     );
@@ -179,7 +189,7 @@
 
                     if (!name || isNaN(bet) || bet <= 0) return;
 
-                    bets.push({ name, bet, horseIdx });
+                    bets.push({ name, bet, horseIdx, receiver });
                     updateBetList();
 
                     document.getElementById("betForm").reset();
@@ -192,7 +202,7 @@
                         (b) =>
                             `<li>${b.name} bets ${b.bet} on ${
                                 horseNames[b.horseIdx]
-                            }</li>`
+                            } and gives to ${b.receiver}</li>`
                     )
                     .join("");
             }
@@ -214,7 +224,7 @@
 
                 const weights = [p1, p2, p3, p4];
                 const horsePool = [];
-                const numHorse = 10;
+                const numHorse = 200;
 
                 for (let i = 0; i < weights[0] * numHorse; i++)
                     horsePool.push(0);
@@ -270,13 +280,21 @@
                 );
 
                 for (const w of winners) {
-                    betsDisplay.innerHTML += `<span class='text-green-500 font-bold'>${
-                        w.name
-                    } deler ut ${w.bet * 2} slurker! <br></span>`;
+                    let slurker = "slurker";
+                    if (w.bet == 10) {
+                        slurker = "shot";
+                        w.bet = 1;
+                    }
+                    betsDisplay.innerHTML += `<span class='text-green-500 font-bold'><span class='text-orange-500'>${w.name}</span> gir ${w.bet} ${slurker} til <span class='text-orange-500' >${w.receiver}</span>! <br></span>`;
                 }
 
                 for (const w of losers) {
-                    betsDisplay.innerHTML += `<span class='text-red-500 font-bold'>${w.name} må ta ${w.bet} slurker! <br></span>`;
+                    let slurker = "slurker";
+                    if (w.bet == 10) {
+                        slurker = "shot";
+                        w.bet = 1;
+                    }
+                    betsDisplay.innerHTML += `<span class='text-red-500 font-bold'><span class='text-orange-500'>${w.name}</span> må ta ${w.bet} ${slurker}! <br></span>`;
                 }
 
                 modal.classList.remove("hidden");
