@@ -52,10 +52,22 @@
                     <img src="horse4.png" alt="Horse 4" class="w-16" />
                 </div>
             </div>
+            <div class="track">
+                <div id="horse5" class="flex flex-col">
+                    <p>Hest5</p>
+                    <img src="horse5.png" alt="Horse 5" class="w-16" />
+                </div>
+            </div>
+            <div class="track">
+                <div id="horse6" class="flex flex-col">
+                    <p>Hest6</p>
+                    <img src="horse6.png" alt="Horse 6" class="w-16" />
+                </div>
+            </div>
         </div>
 
         <button
-            onclick="startRace(4)"
+            onclick="startRace()"
             id="startRace"
             class="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition"
         >
@@ -114,6 +126,8 @@
                         <option value="1">Hest 2 - Fifty shades of hay</option>
                         <option value="2">Hest 3 - Sugemulen</option>
                         <option value="3">Hest 4 - Fuktig fredag</option>
+                        <option value="4">Hest 5 -</option>
+                        <option value="5">Hest 6 -</option>
                     </select>
                     <div class="flex justify-between">
                         <button
@@ -143,7 +157,7 @@
             let horses = [];
             let bets = [];
 
-            const horseNames = ["Max hund", "Fifty shades of hay", "Sugemulen", "Fuktig fredag"];
+            const horseNames = ["Max hund", "Fifty shades of hay", "Sugemulen", "Fuktig fredag", "Hest5", "Hest6"];
             const numHorses = horseNames.length;
 
             let horsePool = [];
@@ -237,8 +251,7 @@
             // 🏁 Race Logic
             // ------------------------------
 
-            function startRace(n) {
-                const numHorses = n;
+            function startRace() {
                 document.getElementById("startRace").style.display = "none";
                 if (raceInProgress) return;
                 raceInProgress = true;
@@ -295,6 +308,7 @@
                 const losers = bets.filter((bet) => bet.horseIdx != winnerIndex);
 
                 for (const w of winners) {
+                    w.bet *= 2;
                     let slurker = "slurker";
                     if (w.bet == 1) slurker = "slurk";
                     if (w.bet % 10 == 0) {
