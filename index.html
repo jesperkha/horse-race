@@ -141,9 +141,14 @@
         <script>
             let raceInProgress = false;
             let horses = [];
-            let bets = []; // Store {name, bet, horseIdx}
+            let bets = [];
 
             const horseNames = ["Max hund", "Fifty shades of hay", "Sugemulen", "Fuktig fredag"];
+            const numHorses = horseNames.length;
+
+            let horsePool = [];
+            let comebackFactors = Array(numHorses).fill(25);
+            let preRacePrompt = null;
 
             window.onload = () => {
                 document.getElementById("bettingModal").classList.remove("hidden");
@@ -151,17 +156,13 @@
 
             document.getElementById("betForm").addEventListener("submit", (e) => {
                 e.preventDefault();
-
                 const name = document.getElementById("bettorName").value.trim();
                 const receiver = document.getElementById("bettorTaker").value.trim();
                 const bet = parseFloat(document.getElementById("betAmount").value);
                 const horseIdx = parseInt(document.getElementById("betHorse").value);
-
                 if (!name || isNaN(bet) || bet <= 0) return;
-
                 bets.push({ name, bet, horseIdx, receiver });
                 updateBetList();
-
                 document.getElementById("betForm").reset();
             });
 
@@ -179,27 +180,73 @@
 
             function closeBettingModal() {
                 document.getElementById("bettingModal").classList.add("hidden");
+
+                if (Math.random() > 0.4) showPreRacePrompt(); // Show random prompt after betting is done
             }
+
+            // ------------------------------
+            // 🧠 Pre-Race Prompt System
+            // ------------------------------
+
+            const randomHorseIdx = Math.floor(Math.random() * horseNames.length);
+            const randomHorseName = horseNames[randomHorseIdx];
+
+            const preRacePrompts = [
+                {
+                    text: `Publikum jubler! ${randomHorseName} får en tidlig boost!`,
+                    callback: () => {
+                        comebackFactors[randomHorseIdx] = Math.max(5, 15);
+                        for (let i = 0; i < 25; i++) horsePool.push(randomHorseIdx);
+                    },
+                },
+                {
+                    text: `Ånei! ${randomHorseName} drakk fem Red Bull før reset!`,
+                    callback: () => {
+                        comebackFactors[randomHorseIdx] = 1;
+                        for (let i = 0; i < 70; i++) horsePool.push(randomHorseIdx);
+                    },
+                },
+            ];
+
+            function showPreRacePrompt() {
+                // Pick a random prompt
+                preRacePrompt = preRacePrompts[Math.floor(Math.random() * preRacePrompts.length)];
+
+                const modalHTML = `
+            <div id="preRaceModal" class="fixed inset-0 bg-black/60 flex items-center justify-center">
+                <div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full transform transition-all scale-100 opacity-100">
+                    <h2 class="text-2xl font-bold mb-4">🎲 Før løpet starter...</h2>
+                    <p class="text-lg mb-6">${preRacePrompt.text}</p>
+                    <button onclick="closePreRacePrompt()" class="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition">Kjør!</button>
+                </div>
+            </div>
+        `;
+                document.body.insertAdjacentHTML("beforeend", modalHTML);
+            }
+
+            function closePreRacePrompt() {
+                const modal = document.getElementById("preRaceModal");
+                modal.remove();
+                if (preRacePrompt && typeof preRacePrompt.callback === "function") {
+                    preRacePrompt.callback(); // Apply race effect before starting
+                }
+                startRace(4);
+            }
+
+            // ------------------------------
+            // 🏁 Race Logic
+            // ------------------------------
 
             function startRace(n) {
                 const numHorses = n;
-
                 document.getElementById("startRace").style.display = "none";
-
                 if (raceInProgress) return;
                 raceInProgress = true;
 
-                const comebackFactor = 25;
-                const comebackFactors = [comebackFactor, comebackFactor, comebackFactor, comebackFactor];
-                let horsePool = [];
-
-                // Very good start
-                // comebackFactors[0] = 1;
-                // for (let i = 0; i < 75; i++) horsePool.push(0);
+                horses = [];
 
                 for (let i = 0; i < numHorses; i++) {
-                    horses.push({ id: i + 1, el: document.getElementById("horse" + (i + 1) + ""), pos: 0 });
-                    comebackFactors.push(comebackFactor);
+                    horses.push({ id: i + 1, el: document.getElementById("horse" + (i + 1)), pos: 0 });
                     for (let j = 0; j < comebackFactors[i]; j++) horsePool.push(i);
                 }
 
@@ -216,7 +263,6 @@
                     }
 
                     const horse = horses[idx];
-                    console.log(idx);
                     if (horse.pos >= finishLine) {
                         finishRace(idx);
                         return;
@@ -231,6 +277,10 @@
                 animate();
             }
 
+            // ------------------------------
+            // 🏆 Finish Logic
+            // ------------------------------
+
             function finishRace(winnerIndex) {
                 raceInProgress = false;
                 const modal = document.getElementById("winnerModal");
@@ -238,35 +288,29 @@
                 const content = document.getElementById("modalContent");
                 const winnerName = document.getElementById("winnerName");
 
+                betsDisplay.innerHTML = ""; // clear previous results
                 winnerName.textContent = `🎉 Grattis! ${horseNames[winnerIndex]} vant!`;
 
-                const winners = bets.filter((bet, _) => bet.horseIdx == winnerIndex);
-
-                const losers = bets.filter((bet, _) => bet.horseIdx != winnerIndex);
+                const winners = bets.filter((bet) => bet.horseIdx == winnerIndex);
+                const losers = bets.filter((bet) => bet.horseIdx != winnerIndex);
 
                 for (const w of winners) {
                     let slurker = "slurker";
-                    if (w.bet == 1) {
-                        slurker = "slurk";
-                    }
+                    if (w.bet == 1) slurker = "slurk";
                     if (w.bet % 10 == 0) {
                         const n = Math.floor(w.bet / 10);
-                        slurker = "shot";
-                        if (n > 1) slurker = "shots";
+                        slurker = n > 1 ? "shots" : "shot";
                         w.bet = n;
                     }
-                    betsDisplay.innerHTML += `<span class='text-green-500 font-bold'><span class='text-orange-500'>${w.name}</span> gir ${w.bet} ${slurker} til <span class='text-orange-500' >${w.receiver}</span>! <br></span>`;
+                    betsDisplay.innerHTML += `<span class='text-green-500 font-bold'><span class='text-orange-500'>${w.name}</span> gir ${w.bet} ${slurker} til <span class='text-orange-500'>${w.receiver}</span>! <br></span>`;
                 }
 
                 for (const w of losers) {
                     let slurker = "slurker";
-                    if (w.bet == 1) {
-                        slurker = "slurk";
-                    }
+                    if (w.bet == 1) slurker = "slurk";
                     if (w.bet % 10 == 0) {
                         const n = Math.floor(w.bet / 10);
-                        slurker = "shot";
-                        if (n > 1) slurker = "shots";
+                        slurker = n > 1 ? "shots" : "shot";
                         w.bet = n;
                     }
                     betsDisplay.innerHTML += `<span class='text-red-500 font-bold'><span class='text-orange-500'>${w.name}</span> må ta ${w.bet} ${slurker}! <br></span>`;
@@ -277,8 +321,6 @@
                     content.classList.remove("scale-95", "opacity-0");
                     content.classList.add("scale-100", "opacity-100");
                 }, 50);
-
-                console.log("All bets:", bets);
             }
 
             function closeModal() {
