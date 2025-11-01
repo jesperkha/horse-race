@@ -11,13 +11,7 @@
                 display: flex;
                 flex-direction: column;
                 position: relative;
-                background: repeating-linear-gradient(
-                    90deg,
-                    #e2e8f0,
-                    #e2e8f0 10px,
-                    #cbd5e1 10px,
-                    #cbd5e1 20px
-                );
+                background: repeating-linear-gradient(90deg, #e2e8f0, #e2e8f0 10px, #cbd5e1 10px, #cbd5e1 20px);
                 border-radius: 0.5rem;
                 overflow: hidden;
             }
@@ -30,12 +24,10 @@
         </style>
     </head>
 
-    <body
-        class="bg-gray-100 flex flex-col items-center justify-center min-h-screen space-y-6"
-    >
+    <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen space-y-6">
         <h1 class="text-3xl font-bold mb-4">🏇 Hesteløp</h1>
 
-        <div id="raceTrack" class="space-y-4 w-11/12 max-w-4xl">
+        <div id="raceTrack" class="space-y-4 w-11/12 max-w-6xl">
             <div class="track">
                 <div id="horse1" class="flex flex-col">
                     <p>Max hund</p>
@@ -63,7 +55,7 @@
         </div>
 
         <button
-            onclick="startRace(0.25, 0.25, 0.25, 0.25)"
+            onclick="startRace(4)"
             id="startRace"
             class="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition"
         >
@@ -71,10 +63,7 @@
         </button>
 
         <!-- Winner Modal -->
-        <div
-            id="winnerModal"
-            class="fixed inset-0 bg-black/60 flex items-center justify-center hidden"
-        >
+        <div id="winnerModal" class="fixed inset-0 bg-black/60 flex items-center justify-center hidden">
             <div
                 class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full transform transition-all scale-95 opacity-0"
                 id="modalContent"
@@ -92,10 +81,7 @@
         </div>
 
         <!-- Betting Modal -->
-        <div
-            id="bettingModal"
-            class="fixed inset-0 bg-black/60 flex items-center justify-center"
-        >
+        <div id="bettingModal" class="fixed inset-0 bg-black/60 flex items-center justify-center">
             <div
                 class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full transform transition-all scale-100 opacity-100"
             >
@@ -157,57 +143,36 @@
             let horses = [];
             let bets = []; // Store {name, bet, horseIdx}
 
-            const horseNames = [
-                "Max hund",
-                "Fifty shades of hay",
-                "Sugemulen",
-                "Fuktig fredag",
-            ];
+            const horseNames = ["Max hund", "Fifty shades of hay", "Sugemulen", "Fuktig fredag"];
 
             window.onload = () => {
-                document
-                    .getElementById("bettingModal")
-                    .classList.remove("hidden");
+                document.getElementById("bettingModal").classList.remove("hidden");
             };
 
-            document
-                .getElementById("betForm")
-                .addEventListener("submit", (e) => {
-                    e.preventDefault();
+            document.getElementById("betForm").addEventListener("submit", (e) => {
+                e.preventDefault();
 
-                    const name = document
-                        .getElementById("bettorName")
-                        .value.trim();
-                    const receiver = document
-                        .getElementById("bettorTaker")
-                        .value.trim();
-                    const bet = parseFloat(
-                        document.getElementById("betAmount").value
-                    );
-                    const horseIdx = parseInt(
-                        document.getElementById("betHorse").value
-                    );
+                const name = document.getElementById("bettorName").value.trim();
+                const receiver = document.getElementById("bettorTaker").value.trim();
+                const bet = parseFloat(document.getElementById("betAmount").value);
+                const horseIdx = parseInt(document.getElementById("betHorse").value);
 
-                    if (!name || isNaN(bet) || bet <= 0) return;
+                if (!name || isNaN(bet) || bet <= 0) return;
 
-                    bets.push({ name, bet, horseIdx, receiver });
-                    updateBetList();
+                bets.push({ name, bet, horseIdx, receiver });
+                updateBetList();
 
-                    document.getElementById("betForm").reset();
-                });
+                document.getElementById("betForm").reset();
+            });
 
             function updateBetList() {
                 const list = document.getElementById("betList");
                 list.innerHTML = bets
                     .map(
                         (b) =>
-                            `<li><span class='text-orange-500'>${
-                                b.name
-                            }</span> vedder ${b.bet} på ${
+                            `<li><span class='text-orange-500'>${b.name}</span> vedder ${b.bet} på ${
                                 horseNames[b.horseIdx]
-                            } og gir til <span class='text-orange-500'>${
-                                b.receiver
-                            }</span></li>`
+                            } og gir til <span class='text-orange-500'>${b.receiver}</span></li>`
                     )
                     .join("");
             }
@@ -216,51 +181,48 @@
                 document.getElementById("bettingModal").classList.add("hidden");
             }
 
-            function startRace(p1, p2, p3, p4) {
+            function startRace(n) {
+                const numHorses = n;
+
                 document.getElementById("startRace").style.display = "none";
 
                 if (raceInProgress) return;
                 raceInProgress = true;
 
-                horses = [
-                    { id: 1, el: document.getElementById("horse1"), pos: 0 },
-                    { id: 2, el: document.getElementById("horse2"), pos: 0 },
-                    { id: 3, el: document.getElementById("horse3"), pos: 0 },
-                    { id: 4, el: document.getElementById("horse4"), pos: 0 },
-                ];
+                const comebackFactor = 25;
+                const comebackFactors = [comebackFactor, comebackFactor, comebackFactor, comebackFactor];
+                let horsePool = [];
 
-                const weights = [p1, p2, p3, p4];
-                const horsePool = [];
-                const numHorse = 200;
+                // Very good start
+                // comebackFactors[0] = 1;
+                // for (let i = 0; i < 75; i++) horsePool.push(0);
 
-                for (let i = 0; i < weights[0] * numHorse; i++)
-                    horsePool.push(0);
-                for (let i = 0; i < weights[1] * numHorse; i++)
-                    horsePool.push(1);
-                for (let i = 0; i < weights[2] * numHorse; i++)
-                    horsePool.push(2);
-                for (let i = 0; i < weights[3] * numHorse; i++)
-                    horsePool.push(3);
+                for (let i = 0; i < numHorses; i++) {
+                    horses.push({ id: i + 1, el: document.getElementById("horse" + (i + 1) + ""), pos: 0 });
+                    comebackFactors.push(comebackFactor);
+                    for (let j = 0; j < comebackFactors[i]; j++) horsePool.push(i);
+                }
 
-                const finishLine =
-                    document.querySelector(".track").clientWidth - 80;
+                const finishLine = document.querySelector(".track").clientWidth - 60;
+                const start = document.querySelector(".track").clientLeft;
+                const steps = (finishLine - start) / 100;
 
                 function animate() {
                     const r = Math.floor(Math.random() * horsePool.length);
                     const idx = horsePool[r];
                     horsePool.splice(r, 1);
                     if (!horsePool.includes(idx)) {
-                        for (let i = 0; i < weights[idx] * numHorse; i++)
-                            horsePool.push(idx);
+                        for (let i = 0; i < comebackFactors[idx]; i++) horsePool.push(idx);
                     }
 
                     const horse = horses[idx];
+                    console.log(idx);
                     if (horse.pos >= finishLine) {
                         finishRace(idx);
                         return;
                     }
 
-                    horse.pos += 10;
+                    horse.pos += steps;
                     horse.el.style.transform = `translateX(${horse.pos}px)`;
 
                     setTimeout(animate, 50);
@@ -278,13 +240,9 @@
 
                 winnerName.textContent = `🎉 Grattis! ${horseNames[winnerIndex]} vant!`;
 
-                const winners = bets.filter(
-                    (bet, _) => bet.horseIdx == winnerIndex
-                );
+                const winners = bets.filter((bet, _) => bet.horseIdx == winnerIndex);
 
-                const losers = bets.filter(
-                    (bet, _) => bet.horseIdx != winnerIndex
-                );
+                const losers = bets.filter((bet, _) => bet.horseIdx != winnerIndex);
 
                 for (const w of winners) {
                     let slurker = "slurker";
@@ -334,4 +292,3 @@
         </script>
     </body>
 </html>
-
